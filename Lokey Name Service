@@ -1,0 +1,70 @@
+pragma solidity ^0.6.0;
+
+contract LokeyNameService {
+    // The mapping of names to addresses
+    mapping(bytes32 => address) public names;
+
+    // The mapping of addresses to names
+    mapping(address => bytes32) public reverseNames;
+
+    // The owner of the contract
+    address public owner;
+
+    // The minimum amount of time (in seconds) that must pass between registration or renewal of a name
+    uint public minRegistrationPeriod;
+
+    // The maximum length of a name
+    uint public maxNameLength;
+
+    // The maximum number of names that a single address can register
+    uint public maxNamesPerAddress;
+
+    // The constructor sets the owner and initializes the minRegistrationPeriod and maxNameLength
+    constructor() public {
+        owner = msg.sender;
+        minRegistrationPeriod = 31536000; // 1 year in seconds
+        maxNameLength = 32;
+    }
+
+    // Only the owner can change the minRegistrationPeriod and maxNameLength
+    function setParameters(uint _minRegistrationPeriod, uint _maxNameLength) public onlyOwner {
+        minRegistrationPeriod = _minRegistrationPeriod;
+        maxNameLength = _maxNameLength;
+    }
+
+    // Register a new name
+    function register(bytes32 _name) public {
+        require(_name.length <= maxNameLength, "Name is too long");
+        require(names[_name] == address(0), "Name is already registered");
+        require(reverseNames[msg.sender] == bytes32(0), "Address has already registered a name");
+        names[_name] = msg.sender;
+        reverseNames[msg.sender] = _name;
+    }
+
+    // Renew an existing name
+    function renew(bytes32 _name) public {
+        require(_name.length <= maxNameLength, "Name is too long");
+        require(names[_name] == msg.sender, "You do not own this name");
+        require(reverseNames[msg.sender] == _name, "You have not registered a name");
+    }
+
+    // Transfer ownership of a name to a new address
+    function transfer(bytes32 _name, address _newOwner) public {
+        require(_name.length <= maxNameLength, "Name is too long");
+        require(names[_name] == msg.sender, "You do not own this name");
+        require(reverseNames[_newOwner] == bytes32(0), "New owner has already registered a name");
+        names[_name] = _newOwner;
+        reverseNames[_newOwner] = _name;
+        reverseNames[msg.sender] = bytes32(0);
+    }
+
+    // Remove a name
+    function unregister(bytes32 _name) public {
+        require(_name.length <= maxNameLength, "Name is too long");
+        require(names[_name] == msg.sender, "You do not own this name");
+        delete names[_name];
+        delete reverseNames[msg.sender];
+    }
+
+    // Modifier to allow only
+
